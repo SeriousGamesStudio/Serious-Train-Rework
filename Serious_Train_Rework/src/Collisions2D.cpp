@@ -2,10 +2,15 @@
 namespace Collisions {
 
 RectangleCollider::RectangleCollider():
-	Collider(RECTANGLE)
+	Collider(RECTANGLE), transform(nullptr), width(0), height(0)
 {
 }
 
+RectangleCollider::RectangleCollider(Transform2D* transform, const Real width, const Real height):
+	Collider(RECTANGLE),transform(transform), width(width), height(height)
+{
+}
+/*
 RectangleCollider::RectangleCollider(const Vector2D & center, Real width, Real height):
 	Collider(RECTANGLE), center(center), width(width), height(height)
 {
@@ -26,7 +31,7 @@ RectangleCollider::RectangleCollider(const Real upper_left_x, const Real upper_l
 {
 	center = { aa.X() + (width / 2), aa.Y() - (height / 2) };
 }
-
+*/
 RectangleCollider::~RectangleCollider()
 {
 }
@@ -53,31 +58,33 @@ void RectangleCollider::setHeight(const Real newHeight)
 
 const Vector2D & RectangleCollider::getCenter() const
 {
-	return center;
+	return transform->getPosition();
 }
 
-void RectangleCollider::setCenter(const Vector2D & newCenter)
+const void RectangleCollider::getAABB(Vector2D & aa, Vector2D & bb) const
 {
-	center = newCenter;
-	aa = { center.getX() - (width / 2), center.getY() + (height / 2) };
-	bb = { center.getX() + (width / 2), center.getY() - (height / 2) };
+	const Vector2D& he = getHalfExtend();
+
+	aa.setX(getCenter().getX() - he.getX());
+	aa.setY(getCenter().getY() + he.getY());
+
+	bb.setX(getCenter().getX() + he.getX());
+	bb.setY(getCenter().getY() - he.getY());
+
 }
 
-const std::array<const Vector2D*, 2> RectangleCollider::getAABB() const
+const Vector2D RectangleCollider::getHalfExtend() const
 {
-	return std::array<const Vector2D*, 2>{&aa, &bb};
+	return {width* transform->getScale().getX(), height * transform->getScale().getY()};
 }
 
-const std::array<const Vector2D*, 4> RectangleCollider::getVertices() const
-{
-	return std::array<const Vector2D*, 4>{&aa, &Vector2D(bb.X(), aa.Y()), &bb, &Vector2D(aa.X(), bb.Y())};
-}
+
 CircleCollider::CircleCollider():
 	Collider(CIRCLE)
 {
 }
-CircleCollider::CircleCollider(const Vector2D & center, const Real radious):
-	Collider(CIRCLE), center(center), radious(radious)
+CircleCollider::CircleCollider(Transform2D * transform, const Real radious):
+	Collider(CIRCLE), transform(transform), radious(radious)
 {
 }
 CircleCollider::~CircleCollider()
@@ -85,15 +92,12 @@ CircleCollider::~CircleCollider()
 }
 const Vector2D & CircleCollider::getCenter() const
 {
-	return center;
+	return transform->getPosition();
 }
-void CircleCollider::setCenter(const Vector2D & newCenter)
-{
-	center = newCenter;
-}
+
 const Real CircleCollider::getRadious() const
 {
-	return radious;
+	return radious * transform->getScale().lenght();
 }
 void CircleCollider::setRadious(const Real newRadious)
 {
@@ -101,10 +105,13 @@ void CircleCollider::setRadious(const Real newRadious)
 }
 bool RectRectCollision(RectangleCollider * a, RectangleCollider * b)
 {
-	const Vector2D& A_aa = *a->getAABB()[0];
-	const Vector2D& A_bb = *a->getAABB()[1];
-	const Vector2D& B_aa = *b->getAABB()[0];
-	const Vector2D& B_bb = *b->getAABB()[1];
+	Vector2D A_aa;
+	Vector2D A_bb;
+	a->getAABB(A_aa, A_bb);
+
+	Vector2D B_aa;
+	Vector2D B_bb;
+	b->getAABB(B_aa, B_bb);
 
 	return (A_aa.X() <= B_bb.X() && B_aa.X() <= A_bb.X())
 		&& (A_aa.Y() <= B_bb.Y() && B_aa.Y() <= A_bb.Y());
@@ -117,9 +124,8 @@ bool CircleCircleCollision(CircleCollider * a, CircleCollider * b)
 bool CircleRectangleCollision(CircleCollider* c, RectangleCollider* r) 
 {
 
-	Vector2D diff = c->getCenter() -  r->getCenter();
-	const Vector2D half_extends{r->getWidth()/2.0, r->getHeight()/2};
-	const Vector2D clamped = diff.clamped(-half_extends, half_extends);
+	Vector2D diff = c->getCenter() - r->getCenter();
+	const Vector2D clamped = diff.clamped(-(r->getHalfExtend()), r->getHalfExtend());
 	const Vector2D closest = r->getCenter() + clamped;
 	diff = closest - c->getCenter();
 

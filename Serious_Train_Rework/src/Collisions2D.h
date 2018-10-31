@@ -1,5 +1,6 @@
 #pragma once
 #include "Vector2D.hpp"
+#include "Transform2D.h"
 #include <array>
 namespace Collisions {
 	struct Collider
@@ -8,14 +9,13 @@ namespace Collisions {
 		Collider(Type type) :type(type) {};
 		const Type type;
 	};
-
-
 	struct RectangleCollider : public Collider
 	{
 		RectangleCollider();
-		RectangleCollider(const Vector2D& center, Real width, Real height);
-		RectangleCollider(const Vector2D& upper_left, const Vector2D& bottom_right);
-		RectangleCollider(const Real upper_left_x, const Real upper_left_y, const Real width, const Real height);
+		RectangleCollider(Transform2D* transform, const Real width, const Real height);
+		//RectangleCollider(const Vector2D& center, Real width, Real height);
+		//RectangleCollider(const Vector2D& upper_left, const Vector2D& bottom_right);
+		//RectangleCollider(const Real upper_left_x, const Real upper_left_y, const Real width, const Real height);
 
 		~RectangleCollider();
 
@@ -26,17 +26,13 @@ namespace Collisions {
 		void setHeight(const Real newHeight);
 
 		const Vector2D& getCenter() const;
-		void setCenter(const Vector2D& newCenter);
 
-		const std::array<const Vector2D*, 2> getAABB() const;
+		const void getAABB(Vector2D& aa, Vector2D& bb) const;
 
-		//Clock-wise from upper_left
-		const std::array<const Vector2D*, 4> getVertices() const;
+		const Vector2D getHalfExtend()const;
 
 	private:
-		Vector2D aa;
-		Vector2D bb;
-		Vector2D center;
+		Transform2D* transform;
 		Real width;
 		Real height;
 
@@ -45,7 +41,7 @@ namespace Collisions {
 	struct CircleCollider: public Collider
 	{
 		CircleCollider();
-		CircleCollider(const Vector2D& center, const Real radious);
+		CircleCollider(Transform2D* transform, const Real radious);
 
 		~CircleCollider();
 
@@ -56,7 +52,7 @@ namespace Collisions {
 		const Real getRadious() const;
 		void setRadious(const Real newRadious);
 	private:
-		Vector2D center;
+		Transform2D * transform;
 		Real radious;
 	};
 
